@@ -1,12 +1,12 @@
----
-title: "Wildfires and Movies"
-author: "Nicholas Tison"
-format: html
-execute:
-  echo: false
----
-
-```{r}
+#
+#
+#
+#
+#
+#
+#
+#
+#
 #| message: false
 #| cache: true
 library(tidyverse)
@@ -58,9 +58,9 @@ fires |>
     caption = "Source: wildfire GeoJSON data."
   ) +
   theme_minimal()
-```
-
-```{r}
+#
+#
+#
 #| cache: true
 big_fires <- fires |>
   filter(gis_acres >= 100000) |>
@@ -68,9 +68,9 @@ big_fires <- fires |>
     lon = map_dbl(geometry_coordinates, ~ mean(.x[[1]][1, , 1])),
     lat = map_dbl(geometry_coordinates, ~ mean(.x[[1]][1, , 2]))
   )
-```
-
-```{r}
+#
+#
+#
 #| cache: true
 big_fires |>
   count(agency, sort = TRUE) |>
@@ -83,9 +83,9 @@ big_fires |>
     y = "Number of fires"
   ) +
   theme_minimal()
-```
-
-```{r}
+#
+#
+#
 #| cache: true
 top_fires <- big_fires |>
   arrange(desc(gis_acres)) |>
@@ -124,9 +124,9 @@ fire_map |>
     lng2 = longitude_range[2],
     lat2 = latitude_range[2]
   )
-```
-
-```{r}
+#
+#
+#
 #| cache: true
 imdb_snapshots <- readRDS("data/imdb_snapshots.rds")
 
@@ -134,9 +134,9 @@ print(imdb_snapshots)
 
 imdb_snapshots |>
   count(snap_year)
-```
-
-```{r}
+#
+#
+#
 #| cache: true
 rank_changes <- imdb_snapshots |>
   filter(snap_year %in% c(2015, 2022)) |>
@@ -149,46 +149,16 @@ rank_changes <- imdb_snapshots |>
   drop_na(rank_2015, rank_2022) |>
   mutate(
     release_decade = floor(year / 10) * 10,
-    rank_change = rank_2015 - rank_2022
+    rank_change = abs(rank_2015 - rank_2022)
   )
 
 rank_changes |>
   group_by(release_decade) |>
   summarize(average_rank_change = mean(rank_change), .groups = "drop") |>
   arrange(release_decade)
-```
-
-```{r}
-library(tidyverse)
-
-rank_changes |>
-  group_by(release_decade) |>
-  summarize(average_rank_change = mean(rank_change), .groups = "drop") |>
-  mutate(
-    direction = case_when(
-      average_rank_change > 0 ~ "Rose",
-      average_rank_change < 0 ~ "Fell",
-      TRUE ~ "No change"
-    )
-  ) |>
-  ggplot(aes(x = average_rank_change, y = factor(release_decade))) +
-  geom_vline(xintercept = 0, color = "grey50") +
-  geom_col(aes(fill = direction)) +
-  scale_fill_manual(
-    values = c("Rose" = "steelblue", "Fell" = "firebrick", "No change" = "grey60"),
-    name = "Rank direction"
-  ) +
-  labs(
-    title = "Average IMDb rank change by release decade",
-    subtitle = "Positive values indicate films rose in the rankings",
-    x = "Average rank change (2015 rank - 2022 rank)",
-    y = "Release decade",
-    caption = "Sample: 190 films appearing in both the 2015 and 2022 snapshots."
-  ) +
-  theme_minimal()
-```
-
-```{r}
+#
+#
+#
 #| cache: true
 nolan_films <- c(
   "The Dark Knight",
@@ -204,71 +174,8 @@ imdb_snapshots |>
   filter(title %in% nolan_films) |>
   select(title, snap_year, rank) |>
   pivot_wider(names_from = snap_year, values_from = rank, names_prefix = "rank_")
-```
-
-```{r}
-#| cache: true
-snapshot_counts <- imdb_snapshots |>
-  count(title, name = "snapshot_count")
-
-snapshot_counts |>
-  count(snapshot_count, name = "film_count") |>
-  ggplot(aes(x = snapshot_count, y = film_count)) +
-  geom_col(fill = "firebrick") +
-  labs(
-    title = "Distribution of film appearances across snapshots",
-    x = "Number of snapshots",
-    y = "Number of films"
-  ) +
-  theme_minimal()
-```
-
-```{r}
-#| cache: true
-archive_addresses <- paste0(
-  "https://web.archive.org/web/",
-  c("2015", "2017", "2019", "2021", "2022"),
-  "0101000000/https://www.imdb.com/chart/top/"
-)
-snapshot_years <- c(2015, 2017, 2019, 2021, 2022)
-
-scrape_snapshot <- function(address, snapshot_year) {
-  page <- request(address) |>
-    req_timeout(120) |>
-    req_retry(max_tries = 3) |>
-    req_perform() |>
-    resp_body_html()
-
-  table <- page |>
-    html_table() |>
-    pluck(1)
-
-  ratings <- page |>
-    html_elements("td.ratingColumn strong") |>
-    html_attr("title")
-
-  tibble(
-    rank_title = table[["Rank & Title"]],
-    rating = table[["IMDb Rating"]],
-    rating_tooltip = ratings
-  ) |>
-    mutate(
-      rank = as.integer(str_extract(rank_title, "^\\s*\\d+")),
-      title = rank_title |>
-        str_remove("^\\s*\\d+\\.\\s*") |>
-        str_remove("\\s*\\(\\d{4}\\)\\s*$") |>
-        str_squish(),
-      year = as.integer(str_extract(rank_title, "(?<=\\()\\d{4}(?=\\))")),
-      number = parse_number(str_extract(rating_tooltip, "(?<=based on )[-\\d,]+")),
-      snap_year = snapshot_year
-    ) |>
-    select(snap_year, rank, title, year, rating, number)
-}
-
-imdb_snapshots <- map2_dfr(
-  archive_addresses,
-  snapshot_years,
-  scrape_snapshot
-)
-```
-
+#
+#
+#
+#
+#
