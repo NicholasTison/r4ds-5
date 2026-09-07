@@ -1,12 +1,12 @@
----
-title: "Wildfires and Movies"
-author: "Nicholas Tison"
-format: html
-execute:
-  echo: false
----
-
-```{r}
+#
+#
+#
+#
+#
+#
+#
+#
+#
 #| message: false
 #| cache: true
 library(tidyverse)
@@ -58,9 +58,9 @@ fires |>
     caption = "Source: wildfire GeoJSON data."
   ) +
   theme_minimal()
-```
-
-```{r}
+#
+#
+#
 #| cache: true
 big_fires <- fires |>
   filter(gis_acres >= 100000) |>
@@ -68,9 +68,9 @@ big_fires <- fires |>
     lon = map_dbl(geometry_coordinates, ~ mean(.x[[1]][1, , 1])),
     lat = map_dbl(geometry_coordinates, ~ mean(.x[[1]][1, , 2]))
   )
-```
-
-```{r}
+#
+#
+#
 #| cache: true
 big_fires |>
   count(agency, sort = TRUE) |>
@@ -83,46 +83,23 @@ big_fires |>
     y = "Number of fires"
   ) +
   theme_minimal()
-```
-
-```{r}
+#
+#
+#
 #| cache: true
-top_fires <- big_fires |>
-  arrange(desc(gis_acres)) |>
-  slice_head(n = 10)
-
-fire_map <- leaflet() |>
-  addProviderTiles("CartoDB.Positron")
-
-for (i in seq_len(nrow(top_fires))) {
-  coordinates <- top_fires$geometry_coordinates[[i]][[1]][1, , ]
-  popup <- paste0(
-    "<strong>", top_fires$incident[i], "</strong><br>",
-    "Year: ", top_fires$fire_year[i], "<br>",
-    "Acres: ", format(top_fires$gis_acres[i], big.mark = ",")
-  )
-
-  fire_map <- fire_map |>
-    addPolygons(
-      lng = coordinates[, 1],
-      lat = coordinates[, 2],
-      popup = popup,
-      fillColor = "firebrick",
-      fillOpacity = 0.45,
-      color = "firebrick"
-    )
-}
-
-all_coordinates <- map(top_fires$geometry_coordinates, ~ .x[[1]][1, , ])
-longitude_range <- range(unlist(map(all_coordinates, ~ .x[, 1])))
-latitude_range <- range(unlist(map(all_coordinates, ~ .x[, 2])))
-
-fire_map |>
-  fitBounds(
-    lng1 = longitude_range[1],
-    lat1 = latitude_range[1],
-    lng2 = longitude_range[2],
-    lat2 = latitude_range[2]
-  )
-```
-
+leaflet(big_fires) |>
+  addProviderTiles("CartoDB.Positron") |>
+  addCircleMarkers(
+    ~lon,
+    ~lat,
+    radius = ~sqrt(gis_acres) / 20,
+    stroke = FALSE,
+    fillOpacity = 0.7,
+    popup = ~paste0(incident, "<br>", format(gis_acres, big.mark = ","), " acres")
+  ) |>
+  fitBounds(lng1 = -125, lat1 = 31, lng2 = -102, lat2 = 49)
+#
+#
+#
+#
+#
